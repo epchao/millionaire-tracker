@@ -1,4 +1,4 @@
-package main
+package init
 
 import (
 	"database/sql"
@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -32,7 +34,7 @@ type Short struct {
 	Title   string
 }
 
-func main() {
+func init() {
 	fmt.Println("Initializing PostgreSQL database")
 	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sql.Open("postgres", psqlconn)
@@ -40,7 +42,7 @@ func main() {
 
 	fmt.Println("Querying third-party YouTube API endpoint")
 	channelId := "UC1htp5BzPQ6ScCL6VpepuvA"
-	apiUrl := "https://yt.lemnoslife.com/channels?part=shorts&id=" + channelId
+	apiUrl := "https://yt0.lemnoslife.com/channels?part=shorts&id=" + channelId
 
 	shorts, pageToken, err := getShorts(apiUrl)
 	throwError(err)
@@ -51,7 +53,7 @@ func main() {
 	}
 
 	for len(pageToken) > 0 {
-		apiUrl = "https://yt.lemnoslife.com/channels?part=shorts&id=" + channelId + "&pageToken=" + pageToken
+		apiUrl = "https://yt0.lemnoslife.com/channels?part=shorts&id=" + channelId + "&pageToken=" + pageToken
 
 		newShorts, newPageToken, err := getShorts(apiUrl)
 		throwError(err)
@@ -92,13 +94,21 @@ func getShorts(apiUrl string) (shorts []Short, pageToken string, err error) {
 }
 
 func insertShort(db *sql.DB, short Short) (err error) {
-	insertShort := `insert into "Shorts" ("VideoID", "Title") values ($1, $2)`
-	short.VideoID = "https://www.youtube.com/shorts/" + short.VideoID
+	if strings.Contains(short.Title, "#millionaireinthemaking") || isDate(short.Title) || short.Title == "#millionareinthemaking" {
+		insertShort := `insert into "Shorts" ("VideoID", "Title") values ($1, $2)`
+		short.VideoID = "https://www.youtube.com/shorts/" + short.VideoID
 
-	_, err = db.Exec(insertShort, short.VideoID, short.Title)
-	throwError(err)
+		_, err = db.Exec(insertShort, short.VideoID, short.Title)
+		throwError(err)
+	}
 
 	return nil
+}
+
+func isDate(str string) bool {
+	layout := "January 2, 2006"
+	_, err := time.Parse(layout, str)
+	return err == nil
 }
 
 func throwError(err error) {
