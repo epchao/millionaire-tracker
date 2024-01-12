@@ -7,4 +7,5 @@ import (
 
 func setupRoutes(app *fiber.App) {
 	app.Get("/", handlers.Visualizer)
+	app.Get("/analysis", handlers.Analysis)
 }

@@ -1,8 +1,0 @@
-basePath: /
-info:
-  contact: {}
-  description: All information available on https://github.com/epchao/millionaire-tracker
-  title: Millionaire Tracker API
-  version: "1.0"
-paths: {}
-swagger: "2.0"

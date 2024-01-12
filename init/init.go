@@ -28,6 +28,8 @@ const (
 	dbname   = "millionaire_tracker"
 )
 
+// PORT TO global database supported code (dockerized)
+
 type Message struct {
 	Items []Item
 }

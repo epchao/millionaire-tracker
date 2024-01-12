@@ -1,0 +1,81 @@
+<html lang="en">
+    <head>
+        <title>Millionaire Tracker - Analysis</title>
+        <link rel="stylesheet" href="/main.css" />
+        <script src="https://unpkg.com/htmx.org@1.9.5"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+
+    <body>
+        <div class="text-center pt-4 pb-4">
+            <a class="font-bold text-xl text-neutral-500 hover:text-neutral-700 focus:text-neutral-700 disabled:text-black/30 dark:text-neutral-200 dark:hover:text-neutral-300 dark:focus:text-neutral-300 lg:px-2 [&.active]:text-black/90 dark:[&.active]:text-zinc-400" href="/" target="_self">
+                Go Back to Visualizer
+            </a>
+            <h1 class="font-bold text-2xl pt-10">
+                Forecast to become a millionaire
+            </h1>
+            <p class="pt-4">
+                Goal: $1,000,000
+            </p>
+            <p class="pt-2">
+                Current Balance: {{ .CurrentBalance }}
+            </p>
+            <p class="pt-2">
+                Total Revenue: {{ .TotalRevenue }}
+            </p>
+            <p class="pt-2">
+                Total Expenses: {{ .TotalExpenses }}
+            </p>
+            <p class="pt-2">
+                Total Days: {{ .TotalDays }}
+            </p>
+            <p class="pt-2">
+                Total Savings (balance + revenue - expenses): {{ .TotalSavings }}
+            </p>
+            <p class="pt-2">
+                Daily Net Savings ( (revenue - expenses) / days ): {{ .DailyNetSavings }}
+            </p>
+            <p class="pt-10">
+                Days to become millionaire = (1,000,000 - total savings) / daily net savings
+            </p>
+            <p class="pt-2">
+                It'll take them ~{{ .DaysTillRich }} days to become a millionaire.
+            </p>
+            <h1 class="font-bold text-2xl pt-10">
+                Variance stability
+            </h1>
+            <h2 class="font-bold text-xl pt-2">
+                Revenue
+            </h2>
+            <p class="pt-2">
+                Average Revenue: {{ .AverageRevenue }}
+            </p>
+            <p class="pt-2">
+                Variance for Revenue: {{ .VarianceRevenue }}
+            </p>
+            <p class="pt-2">
+                Standard Deviation for Revenue: {{ .StandardDeviationRevenue }}
+            </p>
+            <h2 class="font-bold text-xl pt-2">
+                Expenses
+            </h2>
+            <p class="pt-2">
+                Average Expenses: {{ .AverageExpenses }}
+            </p>
+            <p class="pt-2">
+                Variance for Expenses: {{ .VarianceExpenses }}
+            </p>
+            <p class="pt-2">
+                Standard Deviation for Expenses: {{ .StandardDeviationExpenses }}
+            </p>
+            <p class="font-bold pt-4">
+                In conclusion, our financial logs are unpredictable and fluctuate significantly day to day.
+            </p>
+            <h1 class="text-xl pt-10">
+                In the future, I'd like to fit a linear regression model within our visualizer to perform a trend analysis.
+            </h1>
+            <p class="font-bold pt-4">
+                Note: The data may be slightly inaccurate especially when there are days when the income + expenses are sequentially the same
+            </p>
+        </div>
+</html>
