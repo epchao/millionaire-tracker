@@ -18,7 +18,6 @@ require (
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/google/pprof v0.0.0-20231229205709-960ae82b1e42 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/otiai10/gosseract v2.2.1+incompatible // indirect
 	github.com/u2takey/go-utils v0.3.1 // indirect
 	golang.org/x/text v0.14.0 // indirect
 )

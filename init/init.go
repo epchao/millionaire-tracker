@@ -70,6 +70,36 @@ func main() {
 	}
 }
 
+// //////////////
+//
+//	UPDATE DB  //
+//
+// //////////////
+// NOT TESTED
+func updateVideo() {
+	fmt.Println("Initializing PostgreSQL database")
+	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	db, err := sql.Open("postgres", psqlconn)
+	throwError(err)
+	defer db.Close()
+
+	channelId := "UC1htp5BzPQ6ScCL6VpepuvA"
+	apiUrl := "https://yt0.lemnoslife.com/channels?part=shorts&id=" + channelId
+	shorts, _, err := getShorts(apiUrl)
+	throwError(err)
+	for _, short := range shorts {
+		result, err := isShortInDB(db, short)
+		throwError(err)
+		if result {
+			break // we've hit a point where there is a short in the database, so all next ones will be in the db
+		} else {
+			err = insertShort(db, short)
+			throwError(err)
+		}
+	}
+
+}
+
 ///////////////////
 //  PARSE VIDEO  //
 ///////////////////
@@ -195,31 +225,51 @@ func getShorts(apiUrl string) (shorts []Short, pageToken string, err error) {
 	return item.Shorts, item.NextPageToken, nil
 }
 
+// NOT TESTED
+func isShortInDB(db *sql.DB, short Short) (found bool, err error) {
+	fmt.Println("Pulling", short.VideoID, "from the database")
+
+	if strings.Contains(short.Title, "#millionaireinthemaking") || isDate(short.Title) || short.Title == "#millionareinthemaking" {
+		getShortFromDB := `SELECT * FROM public."Shorts" WHERE "VideoID" = $1`
+		shortInDB, err := db.Query(getShortFromDB, short.VideoID)
+		throwError(err)
+
+		return shortInDB.Next(), nil
+	}
+	return false, nil
+}
+
 func insertShort(db *sql.DB, short Short) (err error) {
 	fmt.Println("Adding", short.VideoID, short.Title, "to DB.")
 	text, err := extractIncome(short.VideoID)
 	throwError(err)
 	if strings.Contains(short.Title, "#millionaireinthemaking") || isDate(short.Title) || short.Title == "#millionareinthemaking" {
-		revenue := "-123456789"
-		revenueCheck := regexp.MustCompile(`\+\s\$(\d+)`)
-		revenueMatch := revenueCheck.FindStringSubmatch(text)
-		if len(revenueMatch) > 1 {
-			revenue = revenueMatch[1]
-		}
-		revenueNum, err := strconv.Atoi(revenue)
+		// revenue := "-123456789"
+		// revenueCheck := regexp.MustCompile(`\+\s\$(\d+)`)
+		// revenueMatch := revenueCheck.FindStringSubmatch(text)
+		// if len(revenueMatch) > 1 {
+		// 	revenue = revenueMatch[1]
+		// }
+		// revenueNum, err := strconv.Atoi(revenue)
+		// throwError(err)
+		// expenses := "-123456789"
+		// expensesCheck := regexp.MustCompile(`\-\s\$(\d+)`)
+		// expensesMatch := expensesCheck.FindStringSubmatch(text)
+		// if len(expensesMatch) > 1 {
+		// 	expenses = expensesMatch[1]
+		// }
+		// expensesNum, err := strconv.Atoi(expenses)
+		// throwError(err)
+
+		title, err := verifyNumberData(short.Title, "title")
 		throwError(err)
-		expenses := "-123456789"
-		expensesCheck := regexp.MustCompile(`\-\s\$(\d+)`)
-		expensesMatch := expensesCheck.FindStringSubmatch(text)
-		if len(expensesMatch) > 1 {
-			expenses = expensesMatch[1]
-		}
-		expensesNum, err := strconv.Atoi(expenses)
+		revenue, err := verifyNumberData(text, "revenue")
+		throwError(err)
+		expenses, err := verifyNumberData(text, "expenses")
 		throwError(err)
 		insertShort := `insert into "Shorts" ("VideoID", "Title", "Revenue", "Expenses", "NetResult") 
 			values ($1, $2, $3, $4, $5)`
-		// CHANGE TITLE (INTEGER NOW) ONLY HAS THE DAY NUMERICAL VALUE
-		_, err = db.Exec(insertShort, short.VideoID, short.Title, revenueNum, expensesNum, revenueNum-expensesNum)
+		_, err = db.Exec(insertShort, short.VideoID, title, revenue, expenses, revenue-expenses)
 		throwError(err)
 	}
 	return nil
@@ -228,6 +278,26 @@ func insertShort(db *sql.DB, short Short) (err error) {
 /////////////
 //  UTILS  //
 /////////////
+
+// NOT TESTED
+func verifyNumberData(text string, dataType string) (num int, err error) {
+	num = -123456789
+	check := regexp.MustCompile(``)
+	switch dataType {
+	case "revenue":
+		check = regexp.MustCompile(`\+\s\$(\d+)` + `\(revenue\)`)
+	case "expenses":
+		check = regexp.MustCompile(`\-\s\$(\d+)` + `\(expenses\)`)
+	case "title":
+		check = regexp.MustCompile(`Day` + `(\d+)` + `#millionaireinthemaking`)
+	}
+	match := check.FindStringSubmatch(text)
+	if len(match) > 1 {
+		num, err = strconv.Atoi(match[1])
+		throwError(err)
+	}
+	return num, nil
+}
 
 func isDate(str string) bool {
 	layout := "January 2, 2006"
