@@ -12,6 +12,7 @@ require (
 	gocv.io/x/gocv v0.35.0
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/gorm v1.25.5
+	github.com/swaggo/swag v1.16.2
 )
 
 require (
@@ -44,7 +45,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/swaggo/files/v2 v2.0.0 // indirect
-	github.com/swaggo/swag v1.16.2 // indirect
 	github.com/u2takey/go-utils v0.3.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.51.0 // indirect
