@@ -8,11 +8,11 @@ require (
 	github.com/kkdai/youtube/v2 v2.10.0
 	github.com/lib/pq v1.10.9
 	github.com/otiai10/gosseract/v2 v2.4.1
+	github.com/swaggo/swag v1.16.2
 	github.com/u2takey/ffmpeg-go v0.5.0
 	gocv.io/x/gocv v0.35.0
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/gorm v1.25.5
-	github.com/swaggo/swag v1.16.2
 )
 
 require (
