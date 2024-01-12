@@ -1,0 +1,11 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "All information available on https://github.com/epchao/millionaire-tracker",
+        "title": "Millionaire Tracker API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {}
+}
