@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"image"
 	"io"
@@ -13,22 +13,23 @@ import (
 	"strings"
 	"time"
 
+	"github.com/epchao/millionaire-tracker/database"
+	"github.com/epchao/millionaire-tracker/models"
 	"github.com/kkdai/youtube/v2"
 	_ "github.com/lib/pq"
 	"github.com/otiai10/gosseract/v2"
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 	"gocv.io/x/gocv"
+	"gorm.io/gorm"
+
+	"github.com/robfig/cron/v3"
 )
 
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "postgres"
-	password = "password"
-	dbname   = "millionaire_tracker"
+var (
+	revenueRegex  = regexp.MustCompile(`\+\s\$(\d+)\s\(revenue\)`)
+	expensesRegex = regexp.MustCompile(`\-\s\$(\d+)\s\(expenses\)`)
+	titleRegex    = regexp.MustCompile(`Day\s(\d+)\s#millionaireinthemaking`)
 )
-
-// PORT TO global database supported code (dockerized)
 
 type Message struct {
 	Items []Item
@@ -45,18 +46,32 @@ type Short struct {
 }
 
 func main() {
-	fmt.Println("Initializing PostgreSQL database")
-	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-	db, err := sql.Open("postgres", psqlconn)
-	throwError(err)
-	defer db.Close()
+	cronJob := cron.New()
 
+	// run every week
+	cronJob.AddFunc("@weekly", func() {
+		update()
+	})
+
+	cronJob.Start()
+
+	// run forever
+	select {}
+}
+
+// //////////////////
+//	DB OPERATIONS  //
+// //////////////////
+
+//lint:ignore U1000 initial population of database
+func initPopulate() {
+	database.ConnectDb()
 	channelId := "UC1htp5BzPQ6ScCL6VpepuvA"
 	apiUrl := "https://yt0.lemnoslife.com/channels?part=shorts&id=" + channelId
 	shorts, pageToken, err := getShorts(apiUrl)
 	throwError(err)
 	for _, short := range shorts {
-		err = insertShort(db, short)
+		err = insertShort(short)
 		throwError(err)
 	}
 
@@ -65,41 +80,29 @@ func main() {
 		newShorts, newPageToken, err := getShorts(apiUrl)
 		throwError(err)
 		for _, short := range newShorts {
-			err = insertShort(db, short)
+			err = insertShort(short)
 			throwError(err)
 		}
 		pageToken = newPageToken
 	}
 }
 
-// //////////////
-//
-//	UPDATE DB  //
-//
-// //////////////
-// NOT TESTED
-func updateVideo() {
-	fmt.Println("Initializing PostgreSQL database")
-	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-	db, err := sql.Open("postgres", psqlconn)
-	throwError(err)
-	defer db.Close()
-
+func update() {
+	database.ConnectDb()
 	channelId := "UC1htp5BzPQ6ScCL6VpepuvA"
 	apiUrl := "https://yt0.lemnoslife.com/channels?part=shorts&id=" + channelId
 	shorts, _, err := getShorts(apiUrl)
 	throwError(err)
 	for _, short := range shorts {
-		result, err := isShortInDB(db, short)
+		result := isShortInDB(short)
 		throwError(err)
 		if result {
-			break // we've hit a point where there is a short in the database, so all next ones will be in the db
+			break // shorts from now on are already registered
 		} else {
-			err = insertShort(db, short)
+			err = insertShort(short)
 			throwError(err)
 		}
 	}
-
 }
 
 ///////////////////
@@ -227,52 +230,26 @@ func getShorts(apiUrl string) (shorts []Short, pageToken string, err error) {
 	return item.Shorts, item.NextPageToken, nil
 }
 
-// NOT TESTED
-func isShortInDB(db *sql.DB, short Short) (found bool, err error) {
-	fmt.Println("Pulling", short.VideoID, "from the database")
-
+func isShortInDB(short Short) (found bool) {
 	if strings.Contains(short.Title, "#millionaireinthemaking") || isDate(short.Title) || short.Title == "#millionareinthemaking" {
-		getShortFromDB := `SELECT * FROM public."Shorts" WHERE "VideoID" = $1`
-		shortInDB, err := db.Query(getShortFromDB, short.VideoID)
-		throwError(err)
-
-		return shortInDB.Next(), nil
+		var expectedShort models.Short
+		result := database.DB.Db.First(&expectedShort, "video_id = ?", short.VideoID)
+		return !errors.Is(result.Error, gorm.ErrRecordNotFound)
 	}
-	return false, nil
+	return true
 }
 
-func insertShort(db *sql.DB, short Short) (err error) {
-	fmt.Println("Adding", short.VideoID, short.Title, "to DB.")
+func insertShort(short Short) (err error) {
 	text, err := extractIncome(short.VideoID)
 	throwError(err)
 	if strings.Contains(short.Title, "#millionaireinthemaking") || isDate(short.Title) || short.Title == "#millionareinthemaking" {
-		// revenue := "-123456789"
-		// revenueCheck := regexp.MustCompile(`\+\s\$(\d+)`)
-		// revenueMatch := revenueCheck.FindStringSubmatch(text)
-		// if len(revenueMatch) > 1 {
-		// 	revenue = revenueMatch[1]
-		// }
-		// revenueNum, err := strconv.Atoi(revenue)
-		// throwError(err)
-		// expenses := "-123456789"
-		// expensesCheck := regexp.MustCompile(`\-\s\$(\d+)`)
-		// expensesMatch := expensesCheck.FindStringSubmatch(text)
-		// if len(expensesMatch) > 1 {
-		// 	expenses = expensesMatch[1]
-		// }
-		// expensesNum, err := strconv.Atoi(expenses)
-		// throwError(err)
+		title := verifyNumberData(short.Title, "title")
 
-		title, err := verifyNumberData(short.Title, "title")
-		throwError(err)
-		revenue, err := verifyNumberData(text, "revenue")
-		throwError(err)
-		expenses, err := verifyNumberData(text, "expenses")
-		throwError(err)
-		insertShort := `insert into "Shorts" ("VideoID", "Title", "Revenue", "Expenses", "NetResult") 
-			values ($1, $2, $3, $4, $5)`
-		_, err = db.Exec(insertShort, short.VideoID, title, revenue, expenses, revenue-expenses)
-		throwError(err)
+		revenue := verifyNumberData(text, "revenue")
+		expenses := verifyNumberData(text, "expenses")
+
+		newShort := models.Short{Title: title, VideoID: short.VideoID, Revenue: revenue, Expenses: expenses, NetResult: revenue - expenses}
+		database.DB.Db.FirstOrCreate(&newShort, "video_id = ?", short.VideoID) // IFF record doesn't exist already
 	}
 	return nil
 }
@@ -281,24 +258,25 @@ func insertShort(db *sql.DB, short Short) (err error) {
 //  UTILS  //
 /////////////
 
-// NOT TESTED
-func verifyNumberData(text string, dataType string) (num int, err error) {
-	num = -123456789
-	check := regexp.MustCompile(``)
+func verifyNumberData(text string, dataType string) (num int) {
+	var check *regexp.Regexp
 	switch dataType {
 	case "revenue":
-		check = regexp.MustCompile(`\+\s\$(\d+)` + `\(revenue\)`)
+		check = revenueRegex
 	case "expenses":
-		check = regexp.MustCompile(`\-\s\$(\d+)` + `\(expenses\)`)
+		check = expensesRegex
 	case "title":
-		check = regexp.MustCompile(`Day` + `(\d+)` + `#millionaireinthemaking`)
+		check = titleRegex
+	default:
+		return -123456789
 	}
 	match := check.FindStringSubmatch(text)
 	if len(match) > 1 {
-		num, err = strconv.Atoi(match[1])
+		num, err := strconv.Atoi(match[1])
 		throwError(err)
+		return num
 	}
-	return num, nil
+	return -123456789
 }
 
 func isDate(str string) bool {

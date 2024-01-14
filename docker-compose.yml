@@ -8,8 +8,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - .:/usr/src/test
-    command: air ./cxmd/main.go -b 0.0.0.0
+      - .:/usr/src/millionaire-tracker
+    command: air ./api/main.go -b 0.0.0.0
   db:
     image: postgres:alpine
     environment:
