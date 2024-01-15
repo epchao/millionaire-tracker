@@ -1,4 +1,4 @@
-package main
+package scripts
 
 import (
 	"context"
@@ -21,8 +21,6 @@ import (
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 	"gocv.io/x/gocv"
 	"gorm.io/gorm"
-
-	"github.com/robfig/cron/v3"
 )
 
 var (
@@ -45,27 +43,11 @@ type Short struct {
 	Title   string
 }
 
-func main() {
-	cronJob := cron.New()
-
-	// run every week
-	cronJob.AddFunc("@weekly", func() {
-		update()
-	})
-
-	cronJob.Start()
-
-	// run forever
-	select {}
-}
-
 // //////////////////
 //	DB OPERATIONS  //
 // //////////////////
 
-//lint:ignore U1000 initial population of database
-func initPopulate() {
-	database.ConnectDb()
+func Initalize() {
 	channelId := "UC1htp5BzPQ6ScCL6VpepuvA"
 	apiUrl := "https://yt0.lemnoslife.com/channels?part=shorts&id=" + channelId
 	shorts, pageToken, err := getShorts(apiUrl)
@@ -87,8 +69,7 @@ func initPopulate() {
 	}
 }
 
-func update() {
-	database.ConnectDb()
+func Update() {
 	channelId := "UC1htp5BzPQ6ScCL6VpepuvA"
 	apiUrl := "https://yt0.lemnoslife.com/channels?part=shorts&id=" + channelId
 	shorts, _, err := getShorts(apiUrl)
