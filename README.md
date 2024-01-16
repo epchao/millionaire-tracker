@@ -53,4 +53,4 @@ There are only two active pages which is: / and /analysis.
 9. Remove Initialize script and replace it with Update script
 
 ### Disclaimer
-The datapoints may be inaccurate when the image's text wasn't read properly. The analysis is 100% based on sole income and revenues and doesnt include any practicial financial information.
+The datapoints may be inaccurate when the image's text wasn't read properly. The analysis is 100% based on sole revenue and expenses posted and doesnt include any practicial financial information.
