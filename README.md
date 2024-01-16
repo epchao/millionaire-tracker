@@ -52,5 +52,9 @@ There are only two active pages which is: / and /analysis.
 
 9. Remove Initialize script and replace it with Update script
 
+### Reflection
+* The pre-processing before the optical character recognition stage took many trial and error sessions due to finding the correct parameters and determining which techniques work best to retrieve the expenses and revenue text. It was a little more complicated due to the white background and the differently colored text but solved within the ./scripts/scripts.go file.
+* Ensuring that this project was compatible with Docker was also a challenge because I had to ensure that FFMPEG, OPENCV, and tesseract were installed into the docker container. OpenCV includes 5.5 GB worth of functions to use, so I needed to have a pre-loaded image with OpenCV and fix all of the minor errors that appeared.
+
 ### Disclaimer
 The datapoints may be inaccurate when the image's text wasn't read properly. The analysis is 100% based on sole revenue and expenses posted and doesnt include any practicial financial information.
