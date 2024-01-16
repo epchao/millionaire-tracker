@@ -14,6 +14,7 @@ func main() {
 	app := fiber.New(fiber.Config{Views: engine})
 	cronJob := cron.New()
 	setupRoutes(app)
+	// @every 0h0m10s @weekly
 	cronJob.AddFunc("@weekly", func() {
 		scripts.Update()
 	})
