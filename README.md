@@ -14,7 +14,7 @@ Golang web app to display "#millionaireinthemaking" progress
 
 @thejosephmurray has been tracking his daily income and expenditures for almost a year now and I wanted to visualize that progress through a graphical dashboard and perform an analysis to see how long it'll take for them to become a millionaire using solely profit and loss statements!
 
-## Usage
+### Usage
 
 Visit millionairetracker@domain.com (NOT DEPLOYED YET) to see the final site.
 
@@ -22,8 +22,9 @@ There are only two active pages which is: / and /analysis.
 * / - data charts
 * /analysis - forecast to become a millionaire and variance analysis
 
-### Disclaimer
-The datapoints may be inaccurate when the image's text wasn't read properly. The analysis is 100% based on sole income and revenues and doesnt include any practicial financial information.
+### System Design
+![sys-design](https://github.com/epchao/millionaire-tracker/assets/46041923/d291785e-49f9-4a99-9969-1142b4a4c98d)
+
 
 ### Development setup
 
@@ -50,3 +51,6 @@ The datapoints may be inaccurate when the image's text wasn't read properly. The
 8. Run the Initialize script under ```./scripts/script.go``` inside of ```./api/main.go``` to populate the database
 
 9. Remove Initialize script and replace it with Update script
+
+### Disclaimer
+The datapoints may be inaccurate when the image's text wasn't read properly. The analysis is 100% based on sole income and revenues and doesnt include any practicial financial information.
