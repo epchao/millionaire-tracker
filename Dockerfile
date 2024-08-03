@@ -12,7 +12,7 @@ RUN apt-get install -y tesseract-ocr-eng
 WORKDIR /usr/src/millionaire-tracker
 RUN mkdir out/
 
-RUN go install github.com/cosmtrek/air@latest
+RUN go install github.com/air-verse/air@latest
 
 COPY . .
 RUN go mod tidy
