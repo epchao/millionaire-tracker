@@ -28,8 +28,8 @@ func Visualizer(c *fiber.Ctx) error {
 			Target:   "self",
 			Subtitle: "Click the title for an analysis report",
 		}),
-		charts.WithTooltipOpts(opts.Tooltip{Show: true, Trigger: "axis"}),
-		charts.WithToolboxOpts(opts.Toolbox{Show: true}),
+		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true), Trigger: "axis"}),
+		charts.WithToolboxOpts(opts.Toolbox{Show: opts.Bool(true)}),
 	)
 
 	var days []int
@@ -58,7 +58,7 @@ func Visualizer(c *fiber.Ctx) error {
 		AddSeries("Expenses", expenses).
 		AddSeries("Balance", balancePlot).
 		SetSeriesOptions(
-			charts.WithLineChartOpts(opts.LineChart{Smooth: true}),
+			charts.WithLineChartOpts(opts.LineChart{Smooth: opts.Bool(true)}),
 		)
 
 	c.Type("html")
