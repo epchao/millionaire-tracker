@@ -16,3 +16,7 @@ RUN go install github.com/air-verse/air@latest
 
 COPY . .
 RUN go mod tidy
+
+ENV HOST 0.0.0.0
+
+EXPOSE 3000
