@@ -10,6 +10,7 @@ RUN sudo apt-get install -y ffmpeg
 RUN apt-get install -y tesseract-ocr-eng
 
 WORKDIR /usr/src/millionaire-tracker
+
 RUN mkdir out/
 
 RUN go install github.com/air-verse/air@latest
@@ -17,6 +18,5 @@ RUN go install github.com/air-verse/air@latest
 COPY . .
 RUN go mod tidy
 
-ENV HOST 0.0.0.0
-
+ENV HOST=0.0.0.0
 EXPOSE 3000
