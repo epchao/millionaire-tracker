@@ -22,7 +22,7 @@ func main() {
 	// cronJob.Start()
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "3000"
+		port = "8080"
 	}
-	app.Listen(fmt.Sprintf(":%s", port))
+	app.Listen(fmt.Sprintf("0.0.0.0:%s", port))
 }
