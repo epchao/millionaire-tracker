@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/epchao/millionaire-tracker/database"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html/v2"
@@ -17,5 +20,9 @@ func main() {
 	// 	scripts.Update()
 	// })
 	// cronJob.Start()
-	app.Listen(":3000")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
+	app.Listen(fmt.Sprintf(":%s", port))
 }
