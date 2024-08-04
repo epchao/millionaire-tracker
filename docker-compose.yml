@@ -5,22 +5,22 @@ services:
     build: .
     env_file:
       - .env
-    # ports:
-    #   - "3000:3000"
+    ports:
+      - "3000:3000"
     platform: linux/amd64
     volumes:
       - .:/usr/src/millionaire-tracker
     command: air ./api/main.go -b 0.0.0.0
-  # db:
-  #   image: postgres:alpine
-  #   environment:
-  #     - POSTGRES_USER=${DB_USER}
-  #     - POSTGRES_PASSWORD=${DB_PASSWORD}
-  #     - POSTGRES_DB=${DB_NAME}
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - postgres-db:/var/lib/postgresql/data
+  db:
+    image: postgres:alpine
+    environment:
+      - POSTGRES_USER=${DEV_DB_USER}
+      - POSTGRES_PASSWORD=${DEV_DB_PASSWORD}
+      - POSTGRES_DB=${DEV_DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
 
-# volumes:
-#   postgres-db:
+volumes:
+  postgres-db:
