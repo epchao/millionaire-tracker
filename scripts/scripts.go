@@ -184,19 +184,21 @@ func applyOCR(imagePath string) (text string, err error) {
 
 func getShorts(apiUrl string) (shorts []Short, pageToken string, err error) {
 	fmt.Println("Querying:", apiUrl)
-	request, err := http.NewRequest("GET", apiUrl, nil)
-	throwError(err)
+	request, _ := http.NewRequest("GET", apiUrl, nil)
 	request.Header.Set("Content-Type", "application/json; charset=utf-8")
 
 	client := &http.Client{}
 	response, err := client.Do(request)
-	throwError(err)
-	responseBody, err := io.ReadAll(response.Body)
-	throwError(err)
+	if err != nil {
+		return []Short{}, "", fmt.Errorf("Failed to send a request to %s. Receiving %s", apiUrl, err)
+	}
+	responseBody, _ := io.ReadAll(response.Body)
 
 	var formattedData Message
 	err = json.Unmarshal(responseBody, &formattedData)
-	throwError(err)
+	if err != nil {
+		return []Short{}, "", fmt.Errorf("JSON response received from %s is ill-formed. Receiving %s", apiUrl, err)
+	}
 	defer response.Body.Close()
 	item := formattedData.Items[0]
 	return item.Shorts, item.NextPageToken, nil
