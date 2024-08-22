@@ -45,6 +45,7 @@ func populateShorts(apiUrl string) {
 	shorts, pageToken, err := getShorts(apiUrl)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	for _, short := range shorts {
 		err = insertShort(short)
@@ -58,6 +59,7 @@ func populateShorts(apiUrl string) {
 		shorts, newPageToken, err := getShorts(newPageApiUrl)
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
 		for _, short := range shorts {
 			result := isShortInDB(short)
@@ -218,7 +220,6 @@ func insertShort(short Short) (err error) {
 	throwError(err)
 	if strings.Contains(short.Title, "#millionaireinthemaking") || isDate(short.Title) || short.Title == "#millionareinthemaking" {
 		title := verifyNumberData(short.Title, "title")
-
 		revenue := verifyNumberData(text, "revenue")
 		expenses := verifyNumberData(text, "expenses")
 
