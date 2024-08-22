@@ -23,14 +23,9 @@ import (
 	"gorm.io/gorm"
 )
 
-var (
-	revenueRegex  = regexp.MustCompile(`\+\s\$(\d+)\s\(revenue\)`)
-	expensesRegex = regexp.MustCompile(`\-\s\$(\d+)\s\(expenses\)`)
-	titleRegex    = regexp.MustCompile(`Day\s(\d+)\s#millionaireinthemaking`)
-)
-
-type Message struct {
-	Items []Item
+type Short struct {
+	VideoID string
+	Title   string
 }
 
 type Item struct {
@@ -38,51 +33,47 @@ type Item struct {
 	NextPageToken string
 }
 
-type Short struct {
-	VideoID string
-	Title   string
+type Message struct {
+	Items []Item
 }
 
 // //////////////////
 //	DB OPERATIONS  //
 // //////////////////
 
-func Initalize() {
-	channelId := "UC1htp5BzPQ6ScCL6VpepuvA"
-	apiUrl := "https://yt0.lemnoslife.com/channels?part=shorts&id=" + channelId
+func populateShorts(apiUrl string) {
 	shorts, pageToken, err := getShorts(apiUrl)
-	throwError(err)
+	if err != nil {
+		fmt.Println(err)
+	}
 	for _, short := range shorts {
 		err = insertShort(short)
-		throwError(err)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	for len(pageToken) > 0 {
-		apiUrl = "https://yt0.lemnoslife.com/channels?part=shorts&id=" + channelId + "&pageToken=" + pageToken
-		newShorts, newPageToken, err := getShorts(apiUrl)
-		throwError(err)
-		for _, short := range newShorts {
-			err = insertShort(short)
-			throwError(err)
+		newPageApiUrl := apiUrl + "&pageToken=" + pageToken
+		shorts, newPageToken, err := getShorts(newPageApiUrl)
+		if err != nil {
+			fmt.Println(err)
+		}
+		for _, short := range shorts {
+			result := isShortInDB(short)
+			if err != nil {
+				fmt.Println(err)
+			}
+			if result {
+				return
+			} else {
+				err = insertShort(short)
+				if err != nil {
+					fmt.Println(err)
+				}
+			}
 		}
 		pageToken = newPageToken
-	}
-}
-
-func Update() {
-	channelId := "UC1htp5BzPQ6ScCL6VpepuvA"
-	apiUrl := "https://yt0.lemnoslife.com/channels?part=shorts&id=" + channelId
-	shorts, _, err := getShorts(apiUrl)
-	throwError(err)
-	for _, short := range shorts {
-		result := isShortInDB(short)
-		throwError(err)
-		if result {
-			break // shorts from now on are already registered
-		} else {
-			err = insertShort(short)
-			throwError(err)
-		}
 	}
 }
 
@@ -243,11 +234,11 @@ func verifyNumberData(text string, dataType string) (num int) {
 	var check *regexp.Regexp
 	switch dataType {
 	case "revenue":
-		check = revenueRegex
+		check = regexp.MustCompile(`\+\s\$(\d+)\s\(revenue\)`)
 	case "expenses":
-		check = expensesRegex
+		check = regexp.MustCompile(`\-\s\$(\d+)\s\(expenses\)`)
 	case "title":
-		check = titleRegex
+		check = regexp.MustCompile(`Day\s(\d+)\s#millionaireinthemaking`)
 	default:
 		return -123456789
 	}
