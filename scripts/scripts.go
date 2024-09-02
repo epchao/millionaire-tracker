@@ -8,6 +8,7 @@ import (
 	"image"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -183,6 +184,10 @@ func applyOCR(imagePath string) (text string, err error) {
 		return "", err
 	}
 	text, err = ocr.Text()
+	if err != nil {
+		return "", err
+	}
+	err = os.Remove(imagePath)
 	if err != nil {
 		return "", err
 	}
