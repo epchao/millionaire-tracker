@@ -16,7 +16,7 @@ Golang web app to display "#millionaireinthemaking" progress
 
 ### Usage
 
-Visit millionairetracker@domain.com (NOT DEPLOYED YET) to see the final site.
+Visit https://millionaire-tracker-image-262623198314.us-central1.run.app/ to see the final site.
 
 There are only two active pages which is: / and /analysis.
 * / - data charts
@@ -36,25 +36,22 @@ There are only two active pages which is: / and /analysis.
 3. cd into it \
 ```cd millionaire-tracker```
 
-4. Setup .env with your **DB_USER**, **DB_PASSWORD**, **DB_NAME**, and **TESSDATA_PREFIX** \
+4. Setup .env with your **BUILD=DEV**, **DEV_DB_USER**, **DEV_DB_PASSWORD**, **DEV_DB_NAME**, and **TESSDATA_PREFIX** \
 ```touch .env```
 
 5. Ensure you have an ./out/ folder to save processed images \
 ```mkdir out```
 
-6. Build the docker container image and artifacts \
-```docker build --no-cache .```
-
-7. Run the docker container (remove -d to focus output) \
+6. Run the docker container (remove -d to focus output) \
 ```docker compose up -d```
 
-8. Run the Initialize script under ```./scripts/script.go``` inside of ```./api/main.go``` to populate the database
-
-9. Remove Initialize script and replace it with Update script
+7. The docker compose tool will run the container hosting the web applicaton and will serve a local link for you to explore, which is usually http://localhost:3000.
 
 ### Reflection
 * The pre-processing before the optical character recognition stage took many trial and error sessions due to finding the correct parameters and determining which techniques work best to retrieve the expenses and revenue text. It was a little more complicated due to the white background and the differently colored text but solved within the ./scripts/scripts.go file.
 * Ensuring that this project was compatible with Docker was also a challenge because I had to ensure that FFMPEG, OPENCV, and tesseract were installed into the docker container. OpenCV includes 5.5 GB worth of functions to use, so I needed to have a pre-loaded image with OpenCV and fix all of the minor errors that appeared.
 
 ### Disclaimer
-The datapoints may be inaccurate when the image's text wasn't read properly. The analysis is 100% based on sole revenue and expenses posted and doesnt include any practicial financial information.
+* The datapoints may be inaccurate when the image's text wasn't read properly.
+* The analysis is 100% based on sole revenue and expenses posted and doesnt include any practicial financial information.
+* I've been granted access from @thejosephmurray to use his YouTube video data and create a web application to display this data and this project is for my education and research purposes.
