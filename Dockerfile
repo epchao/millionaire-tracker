@@ -1,11 +1,8 @@
 FROM gocv/opencv:latest
 
-RUN apt-get clean && \
-    apt-get -y update && \
-    apt-get -y upgrade && \
-    apt-get install -y sudo liblept5 libtesseract-dev libleptonica-dev tesseract-ocr && \
-    apt-get install -y ffmpeg && \
-    apt-get install -y tesseract-ocr-eng
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends sudo liblept5 libtesseract-dev libleptonica-dev tesseract-ocr ffmpeg tesseract-ocr-eng && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/millionaire-tracker
 
@@ -19,7 +16,5 @@ RUN go mod tidy
 ENV HOST=0.0.0.0
 ENV PORT=8080
 EXPOSE ${PORT}
-EXPOSE ${PORT}/udp
-EXPOSE ${PORT}/tcp
 
 CMD ["air", "./api/main.go", "-b", "0.0.0.0", "--port", "8080"]
