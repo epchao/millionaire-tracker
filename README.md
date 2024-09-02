@@ -8,6 +8,7 @@
 -------------------------------------------------------------------------------
 Golang web app to display "#millionaireinthemaking" progress
 </pre>
+</div>
 
 [@thejosephmurray](https://www.youtube.com/@thejosephmurray) has been tracking his daily income and expenditures for almost a year now and I wanted to visualize that progress through a graphical dashboard and perform an analysis to see how long it'll take for them to become a millionaire using solely profit and loss statements!
 
