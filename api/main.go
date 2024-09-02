@@ -20,6 +20,7 @@ func main() {
 	// 	scripts.Update()
 	// })
 	// cronJob.Start()
+	// scripts.PopulateShortsEveryPage("http://yt.lemnoslife.com/channels?part=shorts&id=UC1htp5BzPQ6ScCL6VpepuvA")
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"

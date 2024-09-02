@@ -30,8 +30,8 @@ type ShortMetadata struct {
 }
 
 type Item struct {
-	ShortMetadatas []ShortMetadata
-	NextPageToken  string
+	Shorts        []ShortMetadata
+	NextPageToken string
 }
 
 type Message struct {
@@ -42,22 +42,22 @@ type Message struct {
 //	DB OPERATIONS  //
 // //////////////////
 
-func populateShortsEveryPage(apiUrl string) {
-	pageToken, err := populateShorts(apiUrl)
+func PopulateShortsEveryPage(apiUrl string) {
+	_, err := populateShorts(apiUrl)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	for len(pageToken) > 0 {
-		newPageApiUrl := apiUrl + "&pageToken=" + pageToken
-		newPageToken, err := populateShorts(newPageApiUrl)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		pageToken = newPageToken
-	}
+	// for len(pageToken) > 0 {
+	// 	newPageApiUrl := apiUrl + "&pageToken=" + pageToken
+	// 	newPageToken, err := populateShorts(newPageApiUrl)
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 		return
+	// 	}
+	// 	pageToken = newPageToken
+	// }
 }
 
 func populateShorts(apiUrl string) (pageToken string, err error) {
@@ -217,11 +217,18 @@ func getShortMetadatas(apiUrl string) (shortMetadataList []ShortMetadata, pageTo
 	}
 	defer response.Body.Close()
 	item := formattedData.Items[0]
-	return item.ShortMetadatas, item.NextPageToken, nil
+	return item.Shorts, item.NextPageToken, nil
 }
 
 func insertShort(shortMetadata ShortMetadata) (err error) {
 	fmt.Println("Attempting to insert the short, %s, into the database", shortMetadata.VideoID)
+	newShort := models.Short{}
+
+	result := database.DB.Db.First(&newShort, "video_id = ?", shortMetadata.VideoID)
+	if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("The short, %s, already exists in the database.", newShort.VideoID)
+	}
+
 	text, err := extractIncome(shortMetadata.VideoID)
 	if err != nil {
 		return err
@@ -231,18 +238,14 @@ func insertShort(shortMetadata ShortMetadata) (err error) {
 		revenue := verifyNumberData(text, "revenue")
 		expenses := verifyNumberData(text, "expenses")
 
-		newShort := models.Short{Title: title, VideoID: shortMetadata.VideoID, Revenue: revenue, Expenses: expenses, NetResult: revenue - expenses}
+		newShort = models.Short{Title: title, VideoID: shortMetadata.VideoID, Revenue: revenue, Expenses: expenses, NetResult: revenue - expenses}
 
-		result := database.DB.Db.First(&shortMetadata, "video_id = ?", shortMetadata.VideoID)
-		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			database.DB.Db.Create(&newShort) // IFF record doesn't exist already
-			fmt.Println("Successfully inserted the short, %s, into the database", shortMetadata.VideoID)
-			return nil
-		} else {
-			return fmt.Errorf("The short, %s, already exists in the database.", shortMetadata.VideoID)
-		}
+		database.DB.Db.Create(&newShort) // IFF record doesn't exist already
+		fmt.Println("Successfully inserted the short, %s, into the database", newShort.VideoID)
+		return nil
+	} else {
+		return fmt.Errorf("The short, %s, is not a #millionaireinthemaking video.", shortMetadata.VideoID)
 	}
-	return fmt.Errorf("The short, %s, is not a #millionaireinthemaking video.", shortMetadata.VideoID)
 }
 
 /////////////
