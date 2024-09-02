@@ -43,21 +43,21 @@ type Message struct {
 // //////////////////
 
 func PopulateShortsEveryPage(apiUrl string) {
-	_, err := populateShorts(apiUrl)
+	pageToken, err := populateShorts(apiUrl)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	// for len(pageToken) > 0 {
-	// 	newPageApiUrl := apiUrl + "&pageToken=" + pageToken
-	// 	newPageToken, err := populateShorts(newPageApiUrl)
-	// 	if err != nil {
-	// 		fmt.Println(err)
-	// 		return
-	// 	}
-	// 	pageToken = newPageToken
-	// }
+	for len(pageToken) > 0 {
+		newPageApiUrl := apiUrl + "&pageToken=" + pageToken
+		newPageToken, err := populateShorts(newPageApiUrl)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		pageToken = newPageToken
+	}
 }
 
 func populateShorts(apiUrl string) (pageToken string, err error) {
@@ -226,7 +226,7 @@ func insertShort(shortMetadata ShortMetadata) (err error) {
 
 	result := database.DB.Db.First(&newShort, "video_id = ?", shortMetadata.VideoID)
 	if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return fmt.Errorf("The short, %s, already exists in the database.", newShort.VideoID)
+		return fmt.Errorf("The short, %s, already exists in the database.", shortMetadata.VideoID)
 	}
 
 	text, err := extractIncome(shortMetadata.VideoID)
