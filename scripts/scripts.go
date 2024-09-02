@@ -23,14 +23,14 @@ import (
 	"gorm.io/gorm"
 )
 
-type Short struct {
+type ShortMetadata struct {
 	VideoID string
 	Title   string
 }
 
 type Item struct {
-	Shorts        []Short
-	NextPageToken string
+	ShortMetadatas []ShortMetadata
+	NextPageToken  string
 }
 
 type Message struct {
@@ -41,42 +41,36 @@ type Message struct {
 //	DB OPERATIONS  //
 // //////////////////
 
-func populateShorts(apiUrl string) {
-	shorts, pageToken, err := getShorts(apiUrl)
+func populateShortsEveryPage(apiUrl string) {
+	pageToken, err := populateShorts(apiUrl)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	for _, short := range shorts {
-		err = insertShort(short)
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
 
 	for len(pageToken) > 0 {
 		newPageApiUrl := apiUrl + "&pageToken=" + pageToken
-		shorts, newPageToken, err := getShorts(newPageApiUrl)
+		newPageToken, err := populateShorts(newPageApiUrl)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		for _, short := range shorts {
-			result := isShortInDB(short)
-			if err != nil {
-				fmt.Println(err)
-			}
-			if result {
-				return
-			} else {
-				err = insertShort(short)
-				if err != nil {
-					fmt.Println(err)
-				}
-			}
-		}
 		pageToken = newPageToken
 	}
+}
+
+func populateShorts(apiUrl string) (pageToken string, err error) {
+	shortMetadatas, pageToken, err := getShortMetadatas(apiUrl)
+	if err != nil {
+		return "", err
+	}
+	for _, shortMetadata := range shortMetadatas {
+		err = insertShort(shortMetadata)
+		if err != nil {
+			return "", err
+		}
+	}
+	return pageToken, nil
 }
 
 ///////////////////
@@ -199,7 +193,7 @@ func applyOCR(imagePath string) (text string, err error) {
 //  LEMNOS API  //
 //////////////////
 
-func getShorts(apiUrl string) (shorts []Short, pageToken string, err error) {
+func getShortMetadatas(apiUrl string) (shortMetadataList []ShortMetadata, pageToken string, err error) {
 	fmt.Println("Querying the API:", apiUrl)
 	request, _ := http.NewRequest("GET", apiUrl, nil)
 	request.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -207,43 +201,43 @@ func getShorts(apiUrl string) (shorts []Short, pageToken string, err error) {
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		return []Short{}, "", fmt.Errorf("Failed to send a request to %s. Receiving %s", apiUrl, err)
+		return []ShortMetadata{}, "", fmt.Errorf("Failed to send a request to %s. Receiving %s", apiUrl, err)
 	}
 	responseBody, _ := io.ReadAll(response.Body)
 
 	var formattedData Message
 	err = json.Unmarshal(responseBody, &formattedData)
 	if err != nil {
-		return []Short{}, "", fmt.Errorf("JSON response received from %s is ill-formed. Receiving %s", apiUrl, err)
+		return []ShortMetadata{}, "", fmt.Errorf("JSON response received from %s is ill-formed. Receiving %s", apiUrl, err)
 	}
 	defer response.Body.Close()
 	item := formattedData.Items[0]
-	return item.Shorts, item.NextPageToken, nil
+	return item.ShortMetadatas, item.NextPageToken, nil
 }
 
-func isShortInDB(short Short) (found bool) {
-	if strings.Contains(short.Title, "#millionaireinthemaking") || isDate(short.Title) || short.Title == "#millionareinthemaking" {
-		var expectedShort models.Short
-		result := database.DB.Db.First(&expectedShort, "video_id = ?", short.VideoID)
-		return !errors.Is(result.Error, gorm.ErrRecordNotFound)
-	}
-	return true
-}
-
-func insertShort(short Short) (err error) {
-	text, err := extractIncome(short.VideoID)
+func insertShort(shortMetadata ShortMetadata) (err error) {
+	fmt.Println("Attempting to insert the short, %s, into the database", shortMetadata.VideoID)
+	text, err := extractIncome(shortMetadata.VideoID)
 	if err != nil {
 		return err
 	}
-	if strings.Contains(short.Title, "#millionaireinthemaking") || isDate(short.Title) || short.Title == "#millionareinthemaking" {
-		title := verifyNumberData(short.Title, "title")
+	if strings.Contains(shortMetadata.Title, "#millionaireinthemaking") || isDate(shortMetadata.Title) || shortMetadata.Title == "#millionareinthemaking" {
+		title := verifyNumberData(shortMetadata.Title, "title")
 		revenue := verifyNumberData(text, "revenue")
 		expenses := verifyNumberData(text, "expenses")
 
-		newShort := models.Short{Title: title, VideoID: short.VideoID, Revenue: revenue, Expenses: expenses, NetResult: revenue - expenses}
-		database.DB.Db.FirstOrCreate(&newShort, "video_id = ?", short.VideoID) // IFF record doesn't exist already
+		newShort := models.Short{Title: title, VideoID: shortMetadata.VideoID, Revenue: revenue, Expenses: expenses, NetResult: revenue - expenses}
+
+		result := database.DB.Db.First(&shortMetadata, "video_id = ?", shortMetadata.VideoID)
+		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			database.DB.Db.Create(&newShort) // IFF record doesn't exist already
+			fmt.Println("Successfully inserted the short, %s, into the database", shortMetadata.VideoID)
+			return nil
+		} else {
+			return fmt.Errorf("The short, %s, already exists in the database.", shortMetadata.VideoID)
+		}
 	}
-	return nil
+	return fmt.Errorf("The short, %s, is not a #millionaireinthemaking video.", shortMetadata.VideoID)
 }
 
 /////////////
