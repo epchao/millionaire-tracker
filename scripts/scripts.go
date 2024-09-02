@@ -84,25 +84,35 @@ func populateShorts(apiUrl string) {
 ///////////////////
 
 func extractIncome(videoID string) (text string, err error) {
-	URL := getVideoData(videoID)
+	URL, err := getVideoData(videoID)
+	if err != nil {
+		return "", err
+	}
 	imagePath, err := downloadLastFrame(videoID, URL)
-	throwError(err)
+	if err != nil {
+		return "", err
+	}
 	preProcessImage(imagePath)
 	text, err = applyOCR(imagePath)
-	throwError(err)
+	if err != nil {
+		return "", err
+	}
 	return text, nil
 }
 
-func getVideoData(videoID string) (URL string) {
-	fmt.Println("Downloading:", videoID)
+func getVideoData(videoID string) (URL string, err error) {
+	fmt.Println("Downloading video data from video id:", videoID)
 	yt := youtube.Client{}
 	video, err := yt.GetVideoContext(context.Background(), videoID)
-	throwError(err)
+	if err != nil {
+		return "", err
+	}
 	format := video.Formats[0] // best quality video is always first (easiest for us to parse)
-	return format.URL
+	return format.URL, nil
 }
 
 func downloadLastFrame(videoID string, URL string) (imagePath string, err error) {
+	fmt.Println("Downloading the last frame image from video id:", videoID)
 	imagePath = "./out/" + videoID + ".png"
 	err = ffmpeg.Input(URL).
 		Filter("reverse", ffmpeg.Args{}).
@@ -110,11 +120,11 @@ func downloadLastFrame(videoID string, URL string) (imagePath string, err error)
 		OverWriteOutput().
 		ErrorToStdOut().
 		Run()
-	throwError(err)
 	return imagePath, err
 }
 
 func preProcessImage(imagePath string) {
+	fmt.Println("Performing pre-processing on the image:", imagePath)
 	img := gocv.IMRead(imagePath, gocv.IMReadGrayScale)
 	defer img.Close()
 
@@ -171,12 +181,17 @@ func preProcessImage(imagePath string) {
 }
 
 func applyOCR(imagePath string) (text string, err error) {
+	fmt.Println("Apply optical character recognition on the image:", imagePath)
 	ocr := gosseract.NewClient()
 	defer ocr.Close()
 	err = ocr.SetImage(imagePath)
-	throwError(err)
+	if err != nil {
+		return "", err
+	}
 	text, err = ocr.Text()
-	throwError(err)
+	if err != nil {
+		return "", err
+	}
 	return text, nil
 }
 
@@ -185,7 +200,7 @@ func applyOCR(imagePath string) (text string, err error) {
 //////////////////
 
 func getShorts(apiUrl string) (shorts []Short, pageToken string, err error) {
-	fmt.Println("Querying:", apiUrl)
+	fmt.Println("Querying the API:", apiUrl)
 	request, _ := http.NewRequest("GET", apiUrl, nil)
 	request.Header.Set("Content-Type", "application/json; charset=utf-8")
 
@@ -217,7 +232,9 @@ func isShortInDB(short Short) (found bool) {
 
 func insertShort(short Short) (err error) {
 	text, err := extractIncome(short.VideoID)
-	throwError(err)
+	if err != nil {
+		return err
+	}
 	if strings.Contains(short.Title, "#millionaireinthemaking") || isDate(short.Title) || short.Title == "#millionareinthemaking" {
 		title := verifyNumberData(short.Title, "title")
 		revenue := verifyNumberData(text, "revenue")
@@ -248,7 +265,9 @@ func verifyNumberData(text string, dataType string) (num int) {
 	match := check.FindStringSubmatch(text)
 	if len(match) > 1 {
 		num, err := strconv.Atoi(match[1])
-		throwError(err)
+		if err != nil {
+			fmt.Println(err)
+		}
 		return num
 	}
 	return -123456789
@@ -258,10 +277,4 @@ func isDate(str string) bool {
 	layout := "January 2, 2006"
 	_, err := time.Parse(layout, str)
 	return err == nil
-}
-
-func throwError(err error) {
-	if err != nil {
-		fmt.Println(err)
-	}
 }
